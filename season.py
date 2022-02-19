@@ -3,8 +3,6 @@
 
 # # Program to determine the Season (BTC, ETH, ALT)
 
-# In[79]:
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -24,14 +22,6 @@ from datetime import timedelta
 from datetime import datetime
 from matplotlib.patches import FancyBboxPatch
 
-
-# In[80]:
-
-
-
-
-
-# In[81]:
 st.title('Crypto Season Dashboard [season.py]')
 
 st.sidebar.markdown('# Adjust Data Section')
@@ -47,11 +37,7 @@ datafile = 'df'+ f'{lookback}' + '_season'
 file_generated = False
 save_path = ''
 
-# In[82]:
-
 client = Client(api_key, secret_key)
-
-# In[83]:
 
 def getbtc():
     info = client.get_exchange_info()
@@ -61,8 +47,6 @@ def getbtc():
     relevant.extend(["BTCUSDT"])
     #relevant = relevant(columns=relevant.loc[:, "B":"D"].columns)
     return (relevant)
-
-# In[84]:
 
 # reset df1
 def resetdf():
@@ -76,8 +60,6 @@ def resetdf():
     df1 = df1.set_index('Time')
     return(df1)
 
-# In[85]:
-
 def savedf():
     global generate_new_file
     dfs=makedf()
@@ -89,9 +71,6 @@ def savedf():
     generate_new_file= False
     return(df1)
 
-
-# In[ ]:
-
 def getdailydata(symbol):
     frame = pd.DataFrame(client.get_historical_klines(symbol,'1d',f'{lookback+1} days ago UTC'))
     if len(frame)>0:
@@ -102,39 +81,27 @@ def getdailydata(symbol):
         frame = frame.astype(float)
         return frame
 
-# In[87]:
-
 def makedf():
     dfs = []
     for coin in relevant:
         dfs.append(getdailydata(coin))
     return(dfs)
 
-# In[88]:
-
 # Get all BTC trading pairs from Binance
 relevant=getbtc()
 
 # ### Start Program
 
-# In[89]:
-
 # *************** Use to generate new data (DONT USE ALWAYS) ***************
 if (generate_new_file):
     df=savedf()
-
-# In[91]:
 
 df=resetdf()
 df.reset_index()
 df.fillna(1, inplace=True)
 
-# In[92]:
-
 returns = np.log(df / df.shift(1)).dropna()
 log_returns = np.log(returns+1)
-
-# In[95]:
 
 dfbtc=log_returns.pop('BTCUSDT')
 dfeth=log_returns.pop('ETH')
@@ -143,16 +110,10 @@ dfn=dfbtc.to_frame().join(dfeth)
 dfn['ALT']=dfalt
 dfn['Season'] = dfn.apply(lambda x: dfn.columns[x.argmax()], axis = 1)
 
-# In[97]:
-
 dfn=dfn.rolling(window=rolling_window, min_periods=1).sum(inplace=True)
 dfn['Season'] = dfn.apply(lambda x: dfn.columns[x.argmax()], axis = 1)
 
-# In[100]:
-
 timeplot=dfn[dfn['Season'] != dfn['Season'].shift(1)].index.tolist()
-
-# In[102]:
 
 plt.figure(figsize = (18, 10))
 plt.plot(dfn['BTCUSDT'], 'blue')
@@ -165,8 +126,6 @@ plt.grid(axis ='y')
 
 plt.show()
 
-# In[103]:
-
 dfb=[]
 dfb=pd.read_csv(save_path + f'{datafile}.csv')
 dfb.Time = pd.to_datetime(dfb.Time)
@@ -177,13 +136,9 @@ dfb.columns=dfb.columns.str.replace("BTC ","")
 #dfb.columns=dfb.columns.str.replace("USDT","BTCUSDT")
 dfb = dfb.set_index('Time')
 
-# In[109]:
-
 dfn['Max']=dfn.iloc[:,:3].max(axis=1)
 dfn = dfn[['BTCUSDT', 'ETH', 'ALT',  'Max', 'Season']]
-
-# In[116]:
-    
+   
 tickers1 = ['BTCUSDT', 'ETH', 'ALT', 'Max'] 
      
 dropdown = st.multiselect('Pick your assets', tickers1, default=['BTCUSDT', 'ETH', 'ALT'])    
@@ -219,9 +174,6 @@ df=dfn.copy()
 delta=end-start
 st.sidebar.subheader(" Actual days displayed: " + str(delta.days+1)+' days') 
 
-
-# In[117]:
-
 if len(dropdown)>0:
     df = df.loc[str(start):str(end),dropdown]
     dfn = dfn.loc[str(start):str(end),dropdown]
@@ -234,7 +186,3 @@ if len(dropdown)>0:
   
     st.line_chart(df)
    
-
-
-
-
